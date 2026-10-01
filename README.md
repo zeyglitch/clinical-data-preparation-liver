@@ -1,6 +1,6 @@
 # Préparation de données cliniques multi-sources (hépatologie)
 
-Fusion et harmonisation de deux fichiers de données cliniques (CSV et JSON) de patients hépatiques, puis classification binaire (maladie hépatique / pas de maladie). Projet académique réalisé en binôme à l'ISIS Castres (INSA), publié avec l'accord de mon binôme.
+Fusion et harmonisation de deux fichiers de données cliniques (CSV et JSON) de patients hépatiques, puis classification binaire (maladie hépatique / pas de maladie). Projet académique réalisé en binôme à l'ISIS Castres (INSA).
 
 ## Ce que montre ce projet
 
@@ -11,9 +11,9 @@ Un pipeline de préparation **sans fuite de données**, et une évaluation qui n
 1. **Harmonisation des deux sources**
    - Contrôle des échelles par comparaison des médianes : la bilirubine du CSV est ≈ 10 fois celle du JSON, elle est ramenée à la même échelle.
    - Protéines totales converties de mg/dL en g/dL ; tranches d'âge (« 41 to 60 yo ») converties en valeur numérique (milieu de tranche).
-   - Renommage des colonnes, concaténation, suppression des doublons.
+   - Renommage des colonnes, concaténation, suppression des doublons, y compris 18 doublons détectables seulement après harmonisation des formats (589 patients au final).
 2. **Nettoyage** : les 0 biologiquement impossibles sont remplacés par des valeurs manquantes.
-3. **Simplification** : suppression de `Direct_Bilirubin` (corrélation de 0,88 avec la bilirubine totale) et de `Albumin_and_Globulin_Ratio` (dérivé d'autres colonnes, 20 % de valeurs manquantes).
+3. **Simplification** : suppression de `Direct_Bilirubin` (corrélation de 0,88 avec la bilirubine totale) et de `Albumin_and_Globulin_Ratio` (dérivé d'autres colonnes, ≈ 20 % de valeurs manquantes).
 4. **Pipeline strict** : split stratifié 80/20 → imputation KNN → suppression des outliers (train) → StandardScaler → SMOTE (train). Tout paramètre appris l'est sur le train uniquement.
 5. **Classification** : Random Forest.
 6. **Validation croisée 5 plis** avec un pipeline complet (imputation, normalisation, SMOTE) réappris dans chaque pli.
@@ -22,16 +22,16 @@ Un pipeline de préparation **sans fuite de données**, et une évaluation qui n
 
 | Évaluation | Résultat |
 |---|---|
-| Test (122 patients) : F1 macro | 0,687 |
-| Test : rappel classe « maladie » | 0,809 (72 / 89) |
-| Test : rappel classe « pas de maladie » | 0,576 (19 / 33) |
-| Validation croisée 5 plis : F1 macro | 0,633 ± 0,043 |
+| Test (118 patients) : F1 macro | 0,655 |
+| Test : rappel classe « maladie » | 0,718 (61 / 85) |
+| Test : rappel classe « pas de maladie » | 0,636 (21 / 33) |
+| Validation croisée 5 plis : F1 macro | 0,621 ± 0,068 |
 
-Ces performances sont modestes. Le jeu de test est petit : la validation croisée est l'estimation à retenir. Environ 1 patient malade sur 5 n'est pas détecté sur le test, le modèle n'est donc pas utilisable en l'état pour un dépistage.
+Ces performances sont modestes et l'estimation est instable (écart-type élevé, test de 118 patients). Environ 3 patients malades sur 10 ne sont pas détectés sur le test : le modèle n'est pas utilisable en l'état pour un dépistage.
 
 ## Limites
 
-- 607 patients seulement, dont 33 « sans maladie » dans le test.
+- 589 patients seulement, dont 33 « sans maladie » dans le test.
 - Âge connu par tranches uniquement (perte de précision).
 - Le facteur 10 sur la bilirubine est déduit des données, pas d'une documentation.
 - Le projet valide la méthode de préparation, pas un modèle clinique.
