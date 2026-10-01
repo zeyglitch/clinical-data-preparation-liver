@@ -1,2 +1,66 @@
-# clinical-data-preparation-liver
-Fusion et préparation de données cliniques CSV/JSON (hépatologie) : harmonisation, imputation KNN, SMOTE, classification. Pipeline sans fuite de données.
+# Préparation de données cliniques multi-sources (hépatologie)
+
+Fusion et harmonisation de deux fichiers de données cliniques (CSV et JSON) de patients hépatiques, puis classification binaire (maladie hépatique / pas de maladie). Projet académique réalisé en binôme à l'ISIS Castres (INSA), publié avec l'accord de mon binôme.
+
+## Ce que montre ce projet
+
+Un pipeline de préparation **sans fuite de données**, et une évaluation qui ne survend pas ses résultats.
+
+## Démarche
+
+1. **Harmonisation des deux sources**
+   - Contrôle des échelles par comparaison des médianes : la bilirubine du CSV est ≈ 10 fois celle du JSON, elle est ramenée à la même échelle.
+   - Protéines totales converties de mg/dL en g/dL ; tranches d'âge (« 41 to 60 yo ») converties en valeur numérique (milieu de tranche).
+   - Renommage des colonnes, concaténation, suppression des doublons.
+2. **Nettoyage** : les 0 biologiquement impossibles sont remplacés par des valeurs manquantes.
+3. **Simplification** : suppression de `Direct_Bilirubin` (corrélation de 0,88 avec la bilirubine totale) et de `Albumin_and_Globulin_Ratio` (dérivé d'autres colonnes, 20 % de valeurs manquantes).
+4. **Pipeline strict** : split stratifié 80/20 → imputation KNN → suppression des outliers (train) → StandardScaler → SMOTE (train). Tout paramètre appris l'est sur le train uniquement.
+5. **Classification** : Random Forest.
+6. **Validation croisée 5 plis** avec un pipeline complet (imputation, normalisation, SMOTE) réappris dans chaque pli.
+
+## Résultats
+
+| Évaluation | Résultat |
+|---|---|
+| Test (122 patients) : F1 macro | 0,687 |
+| Test : rappel classe « maladie » | 0,809 (72 / 89) |
+| Test : rappel classe « pas de maladie » | 0,576 (19 / 33) |
+| Validation croisée 5 plis : F1 macro | 0,633 ± 0,043 |
+
+Ces performances sont modestes. Le jeu de test est petit : la validation croisée est l'estimation à retenir. Environ 1 patient malade sur 5 n'est pas détecté sur le test, le modèle n'est donc pas utilisable en l'état pour un dépistage.
+
+## Limites
+
+- 607 patients seulement, dont 33 « sans maladie » dans le test.
+- Âge connu par tranches uniquement (perte de précision).
+- Le facteur 10 sur la bilirubine est déduit des données, pas d'une documentation.
+- Le projet valide la méthode de préparation, pas un modèle clinique.
+
+## Stack
+
+Python · Pandas · scikit-learn · imbalanced-learn · SciPy · Matplotlib · Seaborn
+
+## Structure du projet
+
+```
+├── clinical_data_preparation_liver.ipynb
+├── README.md
+├── requirements.txt
+├── .gitignore
+└── LICENSE
+```
+
+## Reproduire
+
+Les fichiers `liver.csv` et `liver.json` fournis par le cours ne sont pas versionnés. Pour exécuter le notebook, placer ces deux fichiers dans le dossier indiqué par `BASE_DIR` (première cellule), puis :
+
+```bash
+pip install -r requirements.txt
+```
+
+Le notebook détecte automatiquement s'il est exécuté sous Google Colab (montage de Drive) ou en local.
+
+## Auteur
+
+**Mathieu Jonniaux** — ISIS Castres (partenaire INSA), FIE4 DSIA
+[github.com/zeyglitch](https://github.com/zeyglitch) · [LinkedIn](https://www.linkedin.com/in/mathieu-jonniaux)
